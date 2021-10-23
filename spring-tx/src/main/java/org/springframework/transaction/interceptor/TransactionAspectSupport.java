@@ -921,8 +921,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 								},
 								this::commitTransactionAfterReturning,
 								this::completeTransactionAfterThrowing,
-								this::rollbackTransactionOnCancel)
-							.onErrorMap(this::unwrapIfResourceCleanupFailure))
+								this::rollbackTransactionOnCancel))
 						.contextWrite(TransactionContextManager.getOrCreateContext())
 						.contextWrite(TransactionContextManager.getOrCreateContextHolder());
 			}
@@ -941,8 +940,7 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 							},
 							this::commitTransactionAfterReturning,
 							this::completeTransactionAfterThrowing,
-							this::rollbackTransactionOnCancel)
-						.onErrorMap(this::unwrapIfResourceCleanupFailure))
+							this::rollbackTransactionOnCancel))
 					.contextWrite(TransactionContextManager.getOrCreateContext())
 					.contextWrite(TransactionContextManager.getOrCreateContextHolder()));
 		}
@@ -1024,9 +1022,6 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 								if (ex2 instanceof TransactionSystemException) {
 									((TransactionSystemException) ex2).initApplicationException(ex);
 								}
-								else {
-									ex2.addSuppressed(ex);
-								}
 								return ex2;
 							}
 					);
@@ -1039,29 +1034,12 @@ public abstract class TransactionAspectSupport implements BeanFactoryAware, Init
 								if (ex2 instanceof TransactionSystemException) {
 									((TransactionSystemException) ex2).initApplicationException(ex);
 								}
-								else {
-									ex2.addSuppressed(ex);
-								}
 								return ex2;
 							}
 					);
 				}
 			}
 			return Mono.empty();
-		}
-
-		/**
-		 * Unwrap the cause of a throwable, if produced by a failure
-		 * during the async resource cleanup in {@link Flux#usingWhen}.
-		 * @param ex the throwable to try to unwrap
-		 */
-		private Throwable unwrapIfResourceCleanupFailure(Throwable ex) {
-			if (ex instanceof RuntimeException &&
-					ex.getCause() != null &&
-					ex.getMessage().startsWith("Async resource cleanup failed")) {
-				return ex.getCause();
-			}
-			return ex;
 		}
 	}
 
